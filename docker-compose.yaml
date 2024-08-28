@@ -1,0 +1,25 @@
+name: api_bun_hono
+
+services:
+  postgres:
+    image: postgres:15.2-alpine
+    ports:
+      - ${DATABASE_PORT}:5432
+    volumes:
+      - ./.data/db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
+
+  minio-s3:
+    image: "minio/minio:latest"
+    ports:
+      - "${S3_PORT}:9000"
+      - "${S3_CONSOLE_PORT}:9090"
+    environment:
+      MINIO_ACCESS_KEY: ${S3_USERNAME}
+      MINIO_SECRET_KEY: ${S3_PASSWORD}
+    volumes:
+      - "./.data/s3:/data/minio"
+    command: minio server /data/minio --console-address ":9090"
