@@ -1,5 +1,5 @@
 # Use the official Bun image as the base
-FROM oven/bun:latest
+FROM oven/bun:1.2.21
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -8,10 +8,13 @@ WORKDIR /app
 COPY package.json bun.lockb* ./
 
 # Install dependencies
-RUN bun install --production
+RUN bun install --frozen-lockfile --production
 
 # Copy the rest of the application
 COPY . .
+
+# Generate prisma client
+RUN bunx prisma generate
 
 # Expose the port your Hono app runs on (default is 3000)
 EXPOSE 3000
