@@ -1,5 +1,5 @@
 import { type FileService, FileServiceProviders } from "./file.service";
-import { S3FileService } from "./impl/s3_file.service";
+import { S3FileService } from "./s3_file.service";
 
 function fileServiceFactory({
 	provider = FileServiceProviders.s3ObjectStorage,

@@ -20,15 +20,13 @@ const resetPasswordSchema = z.object({
 });
 
 const validateEmailSchema = z.object({
-	userId: z.string(),
 	code: z.string(),
 });
 
 export {
-  createUserSchema,
-  forgotPasswordSchema,
-  loginSchema,
-  resetPasswordSchema,
-  validateEmailSchema
+	createUserSchema,
+	forgotPasswordSchema,
+	loginSchema,
+	resetPasswordSchema,
+	validateEmailSchema,
 };
-

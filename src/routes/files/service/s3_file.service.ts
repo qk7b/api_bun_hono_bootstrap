@@ -4,7 +4,7 @@ import {
 	PutObjectCommand,
 	S3Client,
 } from "@aws-sdk/client-s3";
-import type { FileService } from "../file.service";
+import type { FileService } from "./file.service";
 
 class S3FileService implements FileService {
 	private s3Client: S3Client;

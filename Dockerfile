@@ -1,23 +1,17 @@
-# Use the official Bun image as the base
-FROM oven/bun:1.2.21
-
-# Set the working directory inside the container
+FROM oven/bun:1.1.21 AS runtime
 WORKDIR /app
 
-# Copy package.json and bun.lockb (or package-lock.json) first to leverage Docker cache
+# Installer uniquement les dépendances de prod
 COPY package.json bun.lockb* ./
-
-# Install dependencies
 RUN bun install --frozen-lockfile --production
 
-# Copy the rest of the application
-COPY . .
+# Copier le code de l'app
+COPY src ./src
 
-# Generate prisma client
-RUN bunx prisma generate
+# Entrypoint
+COPY ./docker-entrypoint.sh .
+RUN chmod +x docker-entrypoint.sh
 
-# Expose the port your Hono app runs on (default is 3000)
+# Port
 EXPOSE 3000
-
-# Command to run your Hono app
-CMD ["bun", "run", "index.ts"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

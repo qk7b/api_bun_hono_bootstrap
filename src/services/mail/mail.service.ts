@@ -25,4 +25,3 @@ interface MailService {
 }
 
 export { MailServiceProviders, type MailService };
-

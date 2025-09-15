@@ -8,7 +8,6 @@ import usersRoute from "./routes/users/users.route";
 const app = new Hono();
 
 console.log("Starting server...");
-console.log(`Connecting to ${process.env.DATABASE_NAME}`);
 
 app.use("/*", cors());
 app.route("/auth", authenticationRoute);

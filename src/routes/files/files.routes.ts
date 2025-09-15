@@ -1,15 +1,19 @@
 import { zValidator } from "@hono/zod-validator";
-import { PrismaClient } from "@prisma/client";
 import { Hono } from "hono";
 import { jwt } from "hono/jwt";
 import { stream } from "hono/streaming";
 import { v4 } from "uuid";
 
-import { fileServiceFactory, FileServiceProviders } from "../../services/file";
 import { createFileSchema } from "./files.schema";
+import type { AppFile } from "./files.type";
+import {
+	FileNotFoundError,
+	PostgresFilesRepository,
+} from "./repository/pg_files.repository";
+import { fileServiceFactory, FileServiceProviders } from "./service";
 
 const filesRoute = new Hono();
-const prisma = new PrismaClient();
+const filesRepository = new PostgresFilesRepository();
 const fileService = fileServiceFactory({
 	provider: FileServiceProviders.s3ObjectStorage,
 });
@@ -28,13 +32,7 @@ filesRoute.use(
 filesRoute.get("/:fileId", async (c) => {
 	const fileId = c.req.param("fileId");
 	try {
-		const dbFile = await prisma.files.findUnique({
-			where: { id: fileId },
-		});
-
-		if (!dbFile) {
-			return c.json({ error: "File not found" }, 404);
-		}
+		const dbFile = await filesRepository.getFileById({ id: fileId });
 
 		const fileData: Uint8Array | undefined = await fileService.readFile({
 			id: fileId,
@@ -56,7 +54,13 @@ filesRoute.get("/:fileId", async (c) => {
 			await stream.write(fileData);
 		});
 	} catch (error) {
-		console.error(error);
+		console.error({
+			message: "Failed to read file",
+			details: error,
+		});
+		if (error instanceof FileNotFoundError) {
+			return c.json({ error: "File not found" }, 404);
+		}
 		return c.json({ error: "Failed to read file", details: error }, 500);
 	}
 });
@@ -73,13 +77,13 @@ filesRoute.post("/", zValidator("json", createFileSchema), async (c) => {
 		// Save in database first
 		const fileId = v4();
 		const fileType = fileData.file.type;
-		const dbFile = await prisma.files.create({
-			data: {
+		const dbFile = await filesRepository.createFile({
+			file: {
 				id: fileId,
 				name: fileData.file.name,
 				bucket: bucketName,
 				contentType: fileType,
-			},
+			} as AppFile,
 		});
 		if (!dbFile) {
 			return c.json({ error: "Failed to create file" }, 500);
@@ -101,27 +105,32 @@ filesRoute.post("/", zValidator("json", createFileSchema), async (c) => {
 
 filesRoute.delete("/:fileId", async (c) => {
 	const fileId = c.req.param("fileId");
-
-	try {
-		const dbFile = await prisma.files.findUnique({
-			where: { id: fileId },
+	return filesRepository
+		.getFileById({ id: fileId })
+		.then((file) => {
+			// Delete on storage
+			return fileService.deleteFile({
+				id: fileId,
+				location: file.bucket,
+			});
+		})
+		.then(() => {
+			// Delete from database
+			return filesRepository.deleteFile({ fileId });
+		})
+		.then(() => {
+			return c.json(204);
+		})
+		.catch((error) => {
+			console.error({
+				message: "Failed to delete file",
+				details: error,
+			});
+			if (error instanceof FileNotFoundError) {
+				return c.json({ error: "File not found" }, 404);
+			}
+			return c.json({ error: "Failed to delete file" }, 500);
 		});
-		if (!dbFile) {
-			return c.json({ error: "File not found" }, 404);
-		}
-
-		// First, delete from storage
-		await fileService.deleteFile({
-			id: fileId,
-			location: dbFile.bucket,
-		});
-		// Then, delete from database
-		await prisma.files.delete({ where: { id: fileId } });
-		return c.status(204);
-	} catch (error) {
-		console.error(error);
-		return c.json({ error: "Failed to delete icon" }, 500);
-	}
 });
 
 export default filesRoute;
