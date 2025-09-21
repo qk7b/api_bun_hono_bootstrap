@@ -2,22 +2,19 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { sign } from "hono/jwt";
 import { BrevoMailService } from "../../services/mail/impl/brevo_mail.service";
+import { AuthRepository, InvalidCodeError, UserNotFoundError } from "./auth.repository";
 import {
 	createUserSchema,
 	forgotPasswordSchema,
 	loginSchema,
 	resetPasswordSchema,
 	validateEmailSchema,
-} from "./authentication.schema";
-import {
-	InvalidCodeError,
-	PostgresAuthenticationRepository,
-	UserNotFoundError,
-} from "./repository/pg_authentication.repository";
+} from "./auth.schema";
 
-const authenticationRoute = new Hono();
+
+const authRoute = new Hono();
 const email = new BrevoMailService();
-const authenticationRepository = new PostgresAuthenticationRepository();
+const authRepository = new AuthRepository();
 /**
  * Hash a password using bcrypt algorithm with a cost of 4
  * @param password - The password to hash
@@ -72,19 +69,19 @@ async function generateJWT(data: {
  * the user's email
  * @returns The created user
  */
-authenticationRoute.post(
+authRoute.post(
 	"/",
 	zValidator("json", createUserSchema),
 	async (c) => {
 		const data = c.req.valid("json");
 		// Create the user
-		return authenticationRepository
+		return authRepository
 			.createUser({
 				email: data.email,
 				passwordHash: await hashPassword(data.password),
 			})
 			.then((_userId: string) => {
-				return authenticationRepository.createCodeForUser({
+				return authRepository.createCodeForUser({
 					email: data.email,
 				});
 			})
@@ -114,14 +111,14 @@ authenticationRoute.post(
  * If it is, we update the user's validation status.
  * If it is not, we do nothing to stay idempotent.
  */
-authenticationRoute.post(
+authRoute.post(
 	"/validate",
 	zValidator("json", validateEmailSchema),
 	async (c) => {
 		const data = c.req.valid("json");
 		const valdiationCode = data.code;
 
-		return authenticationRepository
+		return authRepository
 			.validateUser({
 				code: valdiationCode,
 			})
@@ -141,12 +138,12 @@ authenticationRoute.post(
  * Forgot password
  * Create a reset code for the user and send it to their email
  */
-authenticationRoute.post(
+authRoute.post(
 	"/forgot-password",
 	zValidator("json", forgotPasswordSchema),
 	async (c) => {
 		const data = c.req.valid("json");
-		return authenticationRepository
+		return authRepository
 			.createCodeForUser({ email: data.email })
 			.then((resetCode: string) => {
 				return email.sendMail({
@@ -172,12 +169,12 @@ authenticationRoute.post(
  * Reset the user's password with the reset code and set
  * the validation code as expired and the new password
  */
-authenticationRoute.post(
+authRoute.post(
 	"/reset-password",
 	zValidator("json", resetPasswordSchema),
 	async (c) => {
 		const data = c.req.valid("json");
-		return authenticationRepository
+		return authRepository
 			.resetPassword({
 				code: data.code,
 				newPasswordHash: await hashPassword(data.password),
@@ -198,13 +195,13 @@ authenticationRoute.post(
 );
 
 // Log a user in
-authenticationRoute.post(
+authRoute.post(
 	"/login",
 	zValidator("json", loginSchema),
 	async (c) => {
 		const data = c.req.valid("json");
 		// Get user with specific username
-		return authenticationRepository
+		return authRepository
 			.getUser({ email: data.email })
 			.then(async (authUser) => {
 				// Check password
@@ -239,4 +236,4 @@ authenticationRoute.post(
 	},
 );
 
-export default authenticationRoute;
+export default authRoute;

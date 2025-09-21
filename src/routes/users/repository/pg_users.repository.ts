@@ -1,5 +1,5 @@
 import { db } from "../../../db/db";
-import { UserNotFoundError } from "../../authentication/repository/pg_authentication.repository";
+import { UserNotFoundError } from "../../auth/repository/pg_auth.repository";
 import type { User } from "../users.type";
 import type { UsersRepository } from "./users.repository";
 

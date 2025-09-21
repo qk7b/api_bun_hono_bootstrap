@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { jwt } from "hono/jwt";
-import { UserNotFoundError } from "../authentication/repository/pg_authentication.repository";
+import { UserNotFoundError } from "../auth/repository/pg_auth.repository";
 import { PostgresUsersRepository } from "./repository/pg_users.repository";
 
 const usersRoute = new Hono();

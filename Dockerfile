@@ -8,10 +8,8 @@ RUN bun install --frozen-lockfile --production
 # Copier le code de l'app
 COPY src ./src
 
-# Entrypoint
-COPY ./docker-entrypoint.sh .
-RUN chmod +x docker-entrypoint.sh
-
 # Port
 EXPOSE 3000
-ENTRYPOINT ["./docker-entrypoint.sh"]
+
+# Entrypoint
+CMD ["bun", "run", "prod"]
