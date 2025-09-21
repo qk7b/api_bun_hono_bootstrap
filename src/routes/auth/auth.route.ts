@@ -2,15 +2,18 @@ import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { sign } from "hono/jwt";
 import { BrevoMailService } from "../../services/mail/impl/brevo_mail.service";
-import { AuthRepository, InvalidCodeError, UserNotFoundError } from "./auth.repository";
 import {
-	createUserSchema,
-	forgotPasswordSchema,
-	loginSchema,
-	resetPasswordSchema,
-	validateEmailSchema,
+  AuthRepository,
+  InvalidCodeError,
+  UserNotFoundError,
+} from "./auth.repository";
+import {
+  createUserSchema,
+  forgotPasswordSchema,
+  loginSchema,
+  resetPasswordSchema,
+  validateEmailSchema,
 } from "./auth.schema";
-
 
 const authRoute = new Hono();
 const email = new BrevoMailService();
@@ -21,10 +24,10 @@ const authRepository = new AuthRepository();
  * @returns The hashed password
  */
 async function hashPassword(password: string): Promise<string> {
-	return Bun.password.hash(password, {
-		algorithm: "bcrypt",
-		cost: 4, // number between 4-31
-	});
+  return Bun.password.hash(password, {
+    algorithm: "bcrypt",
+    cost: 4, // number between 4-31
+  });
 }
 
 /**
@@ -34,10 +37,10 @@ async function hashPassword(password: string): Promise<string> {
  * @returns True if the password matches, false otherwise
  */
 async function verifyPasswords(
-	givenPassword: string,
-	hash: string,
+  givenPassword: string,
+  hash: string,
 ): Promise<boolean> {
-	return Bun.password.verify(givenPassword, hash, "bcrypt");
+  return Bun.password.verify(givenPassword, hash, "bcrypt");
 }
 
 /**
@@ -46,20 +49,20 @@ async function verifyPasswords(
  * @returns The JWT as a string
  */
 async function generateJWT(data: {
-	id: string;
-	email: string;
+  id: string;
+  email: string;
 }): Promise<string> {
-	const expiresInSeconds = Number(process.env.JWT_EXPIRES_IN) ?? 60 * 60;
-	return sign(
-		{
-			id: data.id,
-			email: data.email,
-			expiresIn: expiresInSeconds,
-			// exp : https://hono.dev/docs/helpers/jwt#payload-validation
-			exp: Math.floor(Date.now() / 1000) + expiresInSeconds, // Token expires in 60 minutes
-		},
-		process.env.JWT_SECRET as string,
-	);
+  const expiresInSeconds = Number(process.env.JWT_EXPIRES_IN) ?? 60 * 60;
+  return sign(
+    {
+      id: data.id,
+      email: data.email,
+      expiresIn: expiresInSeconds,
+      // exp : https://hono.dev/docs/helpers/jwt#payload-validation
+      exp: Math.floor(Date.now() / 1000) + expiresInSeconds, // Token expires in 60 minutes
+    },
+    process.env.JWT_SECRET as string,
+  );
 }
 
 /**
@@ -69,41 +72,37 @@ async function generateJWT(data: {
  * the user's email
  * @returns The created user
  */
-authRoute.post(
-	"/",
-	zValidator("json", createUserSchema),
-	async (c) => {
-		const data = c.req.valid("json");
-		// Create the user
-		return authRepository
-			.createUser({
-				email: data.email,
-				passwordHash: await hashPassword(data.password),
-			})
-			.then((_userId: string) => {
-				return authRepository.createCodeForUser({
-					email: data.email,
-				});
-			})
-			.then((validateCode: string) => {
-				return email.sendMail({
-					email: data.email,
-					subject: "Welcome to My Awesome App",
-					htmlContent: `Welcome to My Awesome App, please validate your account with this validation code : ${validateCode}`,
-				});
-			})
-			.then(() => {
-				return c.json(201);
-			})
-			.catch((error: unknown) => {
-				console.error({
-					message: "Failed to create user",
-					error,
-				});
-				return c.json({ error: "Cannot create user" }, 409);
-			});
-	},
-);
+authRoute.post("/", zValidator("json", createUserSchema), async (c) => {
+  const data = c.req.valid("json");
+  // Create the user
+  return authRepository
+    .createUser({
+      email: data.email,
+      passwordHash: await hashPassword(data.password),
+    })
+    .then((_userId: string) => {
+      return authRepository.createCodeForUser({
+        email: data.email,
+      });
+    })
+    .then((validateCode: string) => {
+      return email.sendMail({
+        email: data.email,
+        subject: "Welcome to My Awesome App",
+        htmlContent: `Welcome to My Awesome App, please validate your account with this validation code : ${validateCode}`,
+      });
+    })
+    .then(() => {
+      return c.json(201);
+    })
+    .catch((error: unknown) => {
+      console.error({
+        message: "Failed to create user",
+        error,
+      });
+      return c.json({ error: "Cannot create user" }, 409);
+    });
+});
 
 /**
  * Validate a user
@@ -112,26 +111,26 @@ authRoute.post(
  * If it is not, we do nothing to stay idempotent.
  */
 authRoute.post(
-	"/validate",
-	zValidator("json", validateEmailSchema),
-	async (c) => {
-		const data = c.req.valid("json");
-		const valdiationCode = data.code;
+  "/validate",
+  zValidator("json", validateEmailSchema),
+  async (c) => {
+    const data = c.req.valid("json");
+    const valdiationCode = data.code;
 
-		return authRepository
-			.validateUser({
-				code: valdiationCode,
-			})
-			.then(() => {
-				return c.json(204);
-			})
-			.catch((error: unknown) => {
-				if (error instanceof InvalidCodeError) {
-					return c.json({ error: "Invalid code" }, 401);
-				}
-				return c.json({ error: "Failed to validate user" }, 500);
-			});
-	},
+    return authRepository
+      .validateUser({
+        code: valdiationCode,
+      })
+      .then(() => {
+        return c.json(204);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof InvalidCodeError) {
+          return c.json({ error: "Invalid code" }, 401);
+        }
+        return c.json({ error: "Failed to validate user" }, 500);
+      });
+  },
 );
 
 /**
@@ -139,29 +138,29 @@ authRoute.post(
  * Create a reset code for the user and send it to their email
  */
 authRoute.post(
-	"/forgot-password",
-	zValidator("json", forgotPasswordSchema),
-	async (c) => {
-		const data = c.req.valid("json");
-		return authRepository
-			.createCodeForUser({ email: data.email })
-			.then((resetCode: string) => {
-				return email.sendMail({
-					email: data.email,
-					subject: "Reset your password",
-					htmlContent: `Reset your password with this validation code : ${resetCode}`,
-				});
-			})
-			.then(() => {
-				return c.json({ message: "Email sent with validation code" }, 202);
-			})
-			.catch((error: unknown) => {
-				if (error instanceof UserNotFoundError) {
-					console.warn("Trying to forgot password for an unknown user");
-				}
-				return c.json({ error: "Failed to create reset code" }, 400);
-			});
-	},
+  "/forgot-password",
+  zValidator("json", forgotPasswordSchema),
+  async (c) => {
+    const data = c.req.valid("json");
+    return authRepository
+      .createCodeForUser({ email: data.email })
+      .then((resetCode: string) => {
+        return email.sendMail({
+          email: data.email,
+          subject: "Reset your password",
+          htmlContent: `Reset your password with this validation code : ${resetCode}`,
+        });
+      })
+      .then(() => {
+        return c.json({ message: "Email sent with validation code" }, 202);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof UserNotFoundError) {
+          console.warn("Trying to forgot password for an unknown user");
+        }
+        return c.json({ error: "Failed to create reset code" }, 400);
+      });
+  },
 );
 
 /**
@@ -170,70 +169,66 @@ authRoute.post(
  * the validation code as expired and the new password
  */
 authRoute.post(
-	"/reset-password",
-	zValidator("json", resetPasswordSchema),
-	async (c) => {
-		const data = c.req.valid("json");
-		return authRepository
-			.resetPassword({
-				code: data.code,
-				newPasswordHash: await hashPassword(data.password),
-			})
-			.then(() => {
-				return c.json({ message: "Password reset successfully" }, 200);
-			})
-			.catch((error: unknown) => {
-				if (error instanceof UserNotFoundError) {
-					console.warn("Trying to reset password for an unknown user");
-				}
-				if (error instanceof InvalidCodeError) {
-					console.warn("Trying to reset password with an invalid code");
-				}
-				return c.json({ error: "Failed to reset password" }, 400);
-			});
-	},
+  "/reset-password",
+  zValidator("json", resetPasswordSchema),
+  async (c) => {
+    const data = c.req.valid("json");
+    return authRepository
+      .resetPassword({
+        code: data.code,
+        newPasswordHash: await hashPassword(data.password),
+      })
+      .then(() => {
+        return c.json({ message: "Password reset successfully" }, 200);
+      })
+      .catch((error: unknown) => {
+        if (error instanceof UserNotFoundError) {
+          console.warn("Trying to reset password for an unknown user");
+        }
+        if (error instanceof InvalidCodeError) {
+          console.warn("Trying to reset password with an invalid code");
+        }
+        return c.json({ error: "Failed to reset password" }, 400);
+      });
+  },
 );
 
 // Log a user in
-authRoute.post(
-	"/login",
-	zValidator("json", loginSchema),
-	async (c) => {
-		const data = c.req.valid("json");
-		// Get user with specific username
-		return authRepository
-			.getUser({ email: data.email })
-			.then(async (authUser) => {
-				// Check password
-				const hashedPassword = authUser.password;
-				const arePasswordTheSame = await verifyPasswords(
-					data.password,
-					hashedPassword,
-				);
-				return {
-					arePasswordTheSame,
-					authUser,
-				};
-			})
-			.then(({ arePasswordTheSame, authUser }) => {
-				if (!arePasswordTheSame) {
-					throw new Error("Invalid email or password");
-				}
-				return generateJWT({
-					id: authUser.id,
-					email: authUser.email,
-				});
-			})
-			.then((token) => {
-				return c.json({ token }, 200);
-			})
-			.catch((error) => {
-				if (error instanceof UserNotFoundError) {
-					console.warn("Trying to login for an unknown user");
-				}
-				return c.json({ error: "Invalid email or password" }, 401);
-			});
-	},
-);
+authRoute.post("/login", zValidator("json", loginSchema), async (c) => {
+  const data = c.req.valid("json");
+  // Get user with specific username
+  return authRepository
+    .getUser({ email: data.email })
+    .then(async (authUser) => {
+      // Check password
+      const hashedPassword = authUser.password;
+      const arePasswordTheSame = await verifyPasswords(
+        data.password,
+        hashedPassword,
+      );
+      return {
+        arePasswordTheSame,
+        authUser,
+      };
+    })
+    .then(({ arePasswordTheSame, authUser }) => {
+      if (!arePasswordTheSame) {
+        throw new Error("Invalid email or password");
+      }
+      return generateJWT({
+        id: authUser.id,
+        email: authUser.email,
+      });
+    })
+    .then((token) => {
+      return c.json({ token }, 200);
+    })
+    .catch((error) => {
+      if (error instanceof UserNotFoundError) {
+        console.warn("Trying to login for an unknown user");
+      }
+      return c.json({ error: "Invalid email or password" }, 401);
+    });
+});
 
 export default authRoute;

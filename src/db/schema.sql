@@ -38,3 +38,17 @@ CREATE TABLE IF NOT EXISTS "files" (
 
     CONSTRAINT "files_pkey" PRIMARY KEY ("id")
 );
+
+-- User files table
+CREATE TABLE IF NOT EXISTS "user_files" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "userId" UUID NOT NULL,
+    "fileId" UUID NOT NULL,
+    "public" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "deletedAt" TIMESTAMP(3),
+
+    CONSTRAINT "user_files_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "user_files_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT "user_files_fileId_fkey" FOREIGN KEY ("fileId") REFERENCES "files"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);

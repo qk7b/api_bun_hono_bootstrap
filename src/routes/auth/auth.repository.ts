@@ -1,116 +1,121 @@
 type AuthUser = {
-	id: string;
-	email: string;
-	password: string;
-	isValidated: boolean;
+  id: string;
+  email: string;
+  password: string;
+  isValidated: boolean;
 };
-import authService from "./service/auth_impl.service";
-
+import authService from "./service";
 
 class UserNotFoundError extends Error {
-	constructor() {
-		super("User not found");
-		this.name = "UserNotFoundError";
-	}
+  constructor() {
+    super("User not found");
+    this.name = "UserNotFoundError";
+  }
 }
 
 class InvalidCodeError extends Error {
-	constructor() {
-		super("Invalid code");
-		this.name = "InvalidCodeError";
-	}
+  constructor() {
+    super("Invalid code");
+    this.name = "InvalidCodeError";
+  }
 }
 
 class InvalidTokenError extends Error {
-	constructor() {
-		super("Invalid token");
-		this.name = "InvalidTokenError";
-	}
+  constructor() {
+    super("Invalid token");
+    this.name = "InvalidTokenError";
+  }
 }
 
 class AuthRepository {
-	async createCodeForUser ({ email }: { email: string }): Promise<string> {
-		const user = await authService.getUser({ email });
-		if (!user) throw new UserNotFoundError();
-		
-		const codes = await authService.getCodesForUser({ userId: user.id });
-		if (codes.length > 0) {
-			const activeCodes = codes.filter((code) => !code.voided && code.expiresAt > new Date());
-			for (const code of activeCodes) {
-				await authService.updateCode({ id: code.id, voided: true });
-			}
-		}
+  async createCodeForUser({ email }: { email: string }): Promise<string> {
+    const user = await authService.getUser({ email });
+    if (!user) throw new UserNotFoundError();
 
-		const code = await authService.createCodeForUser({ userId: user.id });
+    const codes = await authService.getCodesForUser({ userId: user.id });
+    if (codes.length > 0) {
+      const activeCodes = codes.filter(
+        (code) => !code.voided && code.expiresAt > new Date(),
+      );
+      for (const code of activeCodes) {
+        await authService.updateCode({ id: code.id, voided: true });
+      }
+    }
 
-		return code.id;
-	}
+    const code = await authService.createCodeForUser({ userId: user.id });
 
-	async resetPassword({
-		code,
-		newPasswordHash,
-	}: {
-		code: string;
-		newPasswordHash: string;
-		}): Promise<void> {
-		// Get code
-		const validationCode = await authService.getCode({ id: code });
-		if (!validationCode ) throw new InvalidCodeError();
+    return code.id;
+  }
 
-		// Void code
-		await authService.updateCode({ id: code, voided: true });
+  async resetPassword({
+    code,
+    newPasswordHash,
+  }: {
+    code: string;
+    newPasswordHash: string;
+  }): Promise<void> {
+    // Get code
+    const validationCode = await authService.getCode({ id: code });
+    if (!validationCode) throw new InvalidCodeError();
 
-		// get user
-		const user = await authService.getUser({ id: validationCode.userId });
-		if (!user) throw new UserNotFoundError();
+    // Void code
+    await authService.updateCode({ id: code, voided: true });
 
-		// update user password
-		await authService.updateUser({ id: user.id, passwordHash: newPasswordHash });
-	}
+    // get user
+    const user = await authService.getUser({ id: validationCode.userId });
+    if (!user) throw new UserNotFoundError();
 
-	async passwordForUser({ email }: { email: string }): Promise<string> {
-		const user = await authService.getUser({ email });
-		if (!user) throw new UserNotFoundError();
+    // update user password
+    await authService.updateUser({
+      id: user.id,
+      passwordHash: newPasswordHash,
+    });
+  }
 
-		return user.password;
-	}
+  async passwordForUser({ email }: { email: string }): Promise<string> {
+    const user = await authService.getUser({ email });
+    if (!user) throw new UserNotFoundError();
 
-	async createUser({
-		email,
-		passwordHash,
-	}: {
-		email: string;
-		passwordHash: string;
-	}): Promise<string> {
-		const userId = await authService.createUser({ email, passwordHash });
-		return userId;
-	}
+    return user.password;
+  }
 
-	async validateUser({ code }: { code: string }): Promise<void> {
-		// get use for code
-		const validationCode = await authService.getCode({ id: code });
-		if (!validationCode) throw new InvalidCodeError();
+  async createUser({
+    email,
+    passwordHash,
+  }: {
+    email: string;
+    passwordHash: string;
+  }): Promise<string> {
+    const userId = await authService.createUser({ email, passwordHash });
+    return userId;
+  }
 
-		// void code
-		await authService.updateCode({ id: code, voided: true });
+  async validateUser({ code }: { code: string }): Promise<void> {
+    // get use for code
+    const validationCode = await authService.getCode({ id: code });
+    if (!validationCode) throw new InvalidCodeError();
 
-		// Get user
-		const user = await authService.getUser({ id: validationCode.userId });
-		if (!user) throw new UserNotFoundError();
+    // void code
+    await authService.updateCode({ id: code, voided: true });
 
-		// Update user
-		await authService.updateUser({ id: user.id, isValidated: true });
-	}
+    // Get user
+    const user = await authService.getUser({ id: validationCode.userId });
+    if (!user) throw new UserNotFoundError();
 
-	async getUser({ email }: { email: string }): Promise<AuthUser> {
-		const user = await authService.getUser({ email });
-		if (!user) throw new UserNotFoundError();
-		return user;
-	}
+    // Update user
+    await authService.updateUser({ id: user.id, isValidated: true });
+  }
+
+  async getUser({ email }: { email: string }): Promise<AuthUser> {
+    const user = await authService.getUser({ email });
+    if (!user) throw new UserNotFoundError();
+    return user;
+  }
 }
 
 export {
-	AuthRepository, InvalidCodeError,
-	InvalidTokenError, UserNotFoundError
+  AuthRepository,
+  InvalidCodeError,
+  InvalidTokenError,
+  UserNotFoundError,
 };
-
