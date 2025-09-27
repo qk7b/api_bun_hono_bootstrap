@@ -4,38 +4,38 @@ type AuthUser = {
   password: string;
   isValidated: boolean;
 };
-import authService from "./service";
+import authService from './service';
 
 class UserNotFoundError extends Error {
   constructor() {
-    super("User not found");
-    this.name = "UserNotFoundError";
+    super('User not found');
+    this.name = 'UserNotFoundError';
   }
 }
 
 class InvalidCodeError extends Error {
   constructor() {
-    super("Invalid code");
-    this.name = "InvalidCodeError";
+    super('Invalid code');
+    this.name = 'InvalidCodeError';
   }
 }
 
 class InvalidTokenError extends Error {
   constructor() {
-    super("Invalid token");
-    this.name = "InvalidTokenError";
+    super('Invalid token');
+    this.name = 'InvalidTokenError';
   }
 }
 
 class AuthRepository {
   async createCodeForUser({ email }: { email: string }): Promise<string> {
-    const user = await authService.getUser({ email });
+    const user = await authService.getUserByEmail({ email });
     if (!user) throw new UserNotFoundError();
 
     const codes = await authService.getCodesForUser({ userId: user.id });
     if (codes.length > 0) {
       const activeCodes = codes.filter(
-        (code) => !code.voided && code.expiresAt > new Date(),
+        (code) => !code.voided && code.expiresAt > new Date()
       );
       for (const code of activeCodes) {
         await authService.updateCode({ id: code.id, voided: true });
@@ -62,18 +62,18 @@ class AuthRepository {
     await authService.updateCode({ id: code, voided: true });
 
     // get user
-    const user = await authService.getUser({ id: validationCode.userId });
+    const user = await authService.getUserById({ id: validationCode.userId });
     if (!user) throw new UserNotFoundError();
 
     // update user password
-    await authService.updateUser({
+    await authService.updatePassword({
       id: user.id,
       passwordHash: newPasswordHash,
     });
   }
 
   async passwordForUser({ email }: { email: string }): Promise<string> {
-    const user = await authService.getUser({ email });
+    const user = await authService.getUserByEmail({ email });
     if (!user) throw new UserNotFoundError();
 
     return user.password;
@@ -99,15 +99,15 @@ class AuthRepository {
     await authService.updateCode({ id: code, voided: true });
 
     // Get user
-    const user = await authService.getUser({ id: validationCode.userId });
+    const user = await authService.getUserById({ id: validationCode.userId });
     if (!user) throw new UserNotFoundError();
 
     // Update user
-    await authService.updateUser({ id: user.id, isValidated: true });
+    await authService.setValidated({ id: user.id });
   }
 
   async getUser({ email }: { email: string }): Promise<AuthUser> {
-    const user = await authService.getUser({ email });
+    const user = await authService.getUserByEmail({ email });
     if (!user) throw new UserNotFoundError();
     return user;
   }

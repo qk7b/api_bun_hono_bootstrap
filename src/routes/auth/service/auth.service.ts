@@ -30,32 +30,37 @@ interface AuthenticationService {
   /**
    * Update a user
    * @param id - The user's id
-   * @param email - An optional email to update
    * @param passwordHash - An optional hashed password to update
+   * @returns void
+   */
+  updatePassword({
+    id,
+    passwordHash,
+  }: {
+    id: string;
+    passwordHash: string;
+  }): Promise<void>;
+
+  /**
+   * Validate a user
    * @param isValidated - An optional validation status to update
    * @returns void
    */
-  updateUser({
-    id,
-    email,
-    passwordHash,
-    isValidated,
-  }: { id: string } & Partial<{
-    email: string;
-    passwordHash: string;
-    isValidated: boolean;
-  }>): Promise<void>;
+  setValidated({ id }: { id: string }): Promise<void>;
 
   /**
    * Get a user by email or id
    * @param email - The user's email address
+   * @returns The user or null if not found
+   */
+  getUserByEmail({ email }: { email: string }): Promise<AuthUser | null>;
+
+  /**
+   * Get a user by id
    * @param id - The user's id
    * @returns The user or null if not found
    */
-  getUser({
-    email,
-    id,
-  }: Partial<{ email: string; id: string }>): Promise<AuthUser | null>;
+  getUserById({ id }: { id: string }): Promise<AuthUser | null>;
 
   /**
    * Create a validation code for a user

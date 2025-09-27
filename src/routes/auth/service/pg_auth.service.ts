@@ -1,5 +1,5 @@
-import { db } from "../../../db/db";
-import { AuthCode, AuthenticationService, AuthUser } from "./auth.service";
+import { db } from '../../../db/db';
+import { AuthCode, AuthenticationService, AuthUser } from './auth.service';
 
 class PostgresAuthenticationService implements AuthenticationService {
   async createUser({
@@ -10,38 +10,54 @@ class PostgresAuthenticationService implements AuthenticationService {
     passwordHash: string;
   }): Promise<string> {
     const [user] = await db`
-            INSERT INTO users (email, password)
-            VALUES (${email}, ${passwordHash})
+            INSERT INTO users (email)
+            VALUES (${email})
             RETURNING id
+        `;
+    await db`
+            INSERT INTO auth_providers (provider, hashedPassword, "userId")
+            VALUES ("password", "${passwordHash}, ${user.id})
         `;
     return user.id;
   }
 
-  async updateUser({
+  async updatePassword({
     id,
-    email,
     passwordHash,
-    isValidated,
-  }: { id: string } & Partial<{
-    email: string;
+  }: {
+    id: string;
     passwordHash: string;
-    isValidated: boolean;
-  }>): Promise<void> {
+  }): Promise<void> {
     await db`
             UPDATE users u
-            SET u.email = ${email}, u.password = ${passwordHash}, u."isValidated" = ${isValidated}
+            SET u.password = ${passwordHash}
             WHERE u.id = ${id}
         `;
     return;
   }
-  async getUser({
-    email,
-    id,
-  }: Partial<{ email: string; id: string }>): Promise<AuthUser | null> {
+
+  async setValidated({ id }: { id: string }): Promise<void> {
+    await db`
+            UPDATE users u
+            SET u."isValidated" = true
+            WHERE u.id = ${id}
+        `;
+  }
+
+  async getUserByEmail({ email }: { email: string }): Promise<AuthUser | null> {
     const [user] = await db`
             SELECT u.id, u.email, u.password, u."isValidated"
             FROM users u
-            WHERE ${email ? `u.email = ${email} AND ` : ""} ${id ? `u.id = ${id} AND ` : ""} u.deletedAt IS NULL
+            WHERE u.email = ${email} AND u.deletedAt IS NULL
+        `;
+    return user;
+  }
+
+  async getUserById({ id }: { id: string }): Promise<AuthUser | null> {
+    const [user] = await db`
+            SELECT u.id, u.email, u.password, u."isValidated"
+            FROM users u
+            WHERE u.id = ${id} AND u.deletedAt IS NULL
         `;
     return user;
   }

@@ -1,4 +1,4 @@
-FROM oven/bun:1.1.21 AS runtime
+FROM oven/bun:latest
 WORKDIR /app
 
 # Installer uniquement les dépendances de prod
