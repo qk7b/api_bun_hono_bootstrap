@@ -1,19 +1,18 @@
 meta {
-  name: login
+  name: refresh
   type: http
-  seq: 3
+  seq: 4
 }
 
 post {
-  url: {{host}}/auth/login
+  url: {{host}}/auth/refresh
   body: json
   auth: none
 }
 
 body:json {
   {
-    "email": "innowarmth@gmail.com",
-    "password": "pipiCaCa123"
+    "token": "{{bearer}}"
   }
 }
 
