@@ -14,7 +14,7 @@ import {
   resetPasswordSchema,
   validateEmailSchema,
 } from "./auth.schema";
-import { AuthUser } from "./service/auth.service";
+import { toNumber } from "../../utils";
 
 const authRoute = new Hono();
 const emailService = new BrevoMailService();
@@ -53,7 +53,7 @@ async function generateJWT(data: {
   id: string;
   email: string;
 }): Promise<string> {
-  const expiresInSeconds = Number(process.env.JWT_EXPIRES_IN) ?? 60 * 60;
+  const expiresInSeconds = toNumber(process.env.JWT_EXPIRES_IN_SECONDS) ?? 60 * 60;
   return sign(
     {
       id: data.id,

@@ -1,0 +1,21 @@
+meta {
+  name: validate
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{host}}/auth/validate
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "code": "a09f3325-7119-4e34-8da2-22dbda2bbf9c"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

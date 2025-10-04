@@ -30,7 +30,7 @@ class PostgresAuthenticationService implements AuthenticationService {
   }): Promise<void> {
     await db`
             UPDATE public.users u
-            SET u."password" = ${passwordHash}
+            SET "password" = ${passwordHash}
             WHERE u."id" = ${id}
         `;
     return;
@@ -39,7 +39,7 @@ class PostgresAuthenticationService implements AuthenticationService {
   async setValidated({ id }: { id: string }): Promise<void> {
     await db`
             UPDATE public.users u
-            SET u."isValidated" = true
+            SET "isValidated" = true
             WHERE u."id" = ${id}
         `;
   }
@@ -94,7 +94,7 @@ class PostgresAuthenticationService implements AuthenticationService {
   }): Promise<void> {
     await db`
             UPDATE public.user_validation_code uc
-            SET uc."voided" = ${voided}
+            SET "voided" = ${voided}
             WHERE uc."id" = ${id}
         `;
     return;
