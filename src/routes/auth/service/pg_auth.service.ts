@@ -1,5 +1,5 @@
-import { db } from '../../../db/db';
-import { AuthCode, AuthenticationService, AuthUser } from './auth.service';
+import { db } from "../../../db/db";
+import { AuthCode, AuthenticationService, AuthUser } from "./auth.service";
 
 class PostgresAuthenticationService implements AuthenticationService {
   async createUser({
@@ -62,7 +62,11 @@ class PostgresAuthenticationService implements AuthenticationService {
     return user;
   }
 
-  async getPasswordHashById({ userId }: { userId: string }): Promise<string | null> {
+  async getPasswordHashById({
+    userId,
+  }: {
+    userId: string;
+  }): Promise<string | null> {
     const [pwd] = await db`
             SELECT ap."hashedPassword"
             FROM public.auth_providers ap

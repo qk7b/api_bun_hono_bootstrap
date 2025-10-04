@@ -1,5 +1,5 @@
-import { db } from '../../../db/db';
-import { User, UsersService } from './users.service';
+import { db } from "../../../db/db";
+import { User, UsersService } from "./users.service";
 
 class PostgresUsersService implements UsersService {
   async getById({ id }: { id: string }): Promise<User | null> {
