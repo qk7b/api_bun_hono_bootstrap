@@ -1,10 +1,8 @@
 import type { MailService } from "../mail.service";
 
-const brevoTransactionalEmailUrl = "https://api.brevo.com/v3/smtp/email";
-
 class BrevoMailService implements MailService {
   _sendRequest(body: object): Promise<void> {
-    return fetch(brevoTransactionalEmailUrl, {
+    return fetch(process.env.BREVO_URL as string, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

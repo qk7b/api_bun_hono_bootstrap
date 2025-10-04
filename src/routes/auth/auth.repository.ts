@@ -1,10 +1,5 @@
-type AuthUser = {
-  id: string;
-  email: string;
-  password: string;
-  isValidated: boolean;
-};
 import authService from './service';
+import { AuthUser } from './service/auth.service';
 
 class UserNotFoundError extends Error {
   constructor() {
@@ -72,11 +67,11 @@ class AuthRepository {
     });
   }
 
-  async passwordForUser({ email }: { email: string }): Promise<string> {
-    const user = await authService.getUserByEmail({ email });
-    if (!user) throw new UserNotFoundError();
+  async passwordForUser({ userId }: { userId: string }): Promise<string> {
+    const password = await authService.getPasswordHashById({ userId: userId });
+    if (!password) throw new UserNotFoundError();
 
-    return user.password;
+    return password;
   }
 
   async createUser({

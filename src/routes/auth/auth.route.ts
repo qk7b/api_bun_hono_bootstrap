@@ -14,9 +14,10 @@ import {
   resetPasswordSchema,
   validateEmailSchema,
 } from "./auth.schema";
+import { AuthUser } from "./service/auth.service";
 
 const authRoute = new Hono();
-const email = new BrevoMailService();
+const emailService = new BrevoMailService();
 const authRepository = new AuthRepository();
 /**
  * Hash a password using bcrypt algorithm with a cost of 4
@@ -80,27 +81,29 @@ authRoute.post("/", zValidator("json", createUserSchema), async (c) => {
       email: data.email,
       passwordHash: await hashPassword(data.password),
     })
-    .then((_userId: string) => {
-      return authRepository.createCodeForUser({
+    .then(async (userId: string) => {
+      const validateCode = await authRepository.createCodeForUser({
         email: data.email,
       });
+      return { userId, validateCode, email: data.email }
     })
-    .then((validateCode: string) => {
-      return email.sendMail({
-        email: data.email,
+    .then(async ({ userId, validateCode, email }) => {
+      await emailService.sendMail({
+        email: email,
         subject: "Welcome to My Awesome App",
         htmlContent: `Welcome to My Awesome App, please validate your account with this validation code : ${validateCode}`,
       });
+      return { userId };
     })
-    .then(() => {
-      return c.json(201);
+    .then(({ userId }) => {
+      return c.json({ userId }, 201);
     })
     .catch((error: unknown) => {
       console.error({
         message: "Failed to create user",
         error,
       });
-      return c.json({ error: "Cannot create user" }, 409);
+      return c.json({ error: "Cannot create user" }, 400);
     });
 });
 
@@ -122,7 +125,7 @@ authRoute.post(
         code: valdiationCode,
       })
       .then(() => {
-        return c.json(204);
+        return c.body(null, 204);
       })
       .catch((error: unknown) => {
         if (error instanceof InvalidCodeError) {
@@ -145,7 +148,7 @@ authRoute.post(
     return authRepository
       .createCodeForUser({ email: data.email })
       .then((resetCode: string) => {
-        return email.sendMail({
+        return emailService.sendMail({
           email: data.email,
           subject: "Reset your password",
           htmlContent: `Reset your password with this validation code : ${resetCode}`,
@@ -200,8 +203,11 @@ authRoute.post("/login", zValidator("json", loginSchema), async (c) => {
   return authRepository
     .getUser({ email: data.email })
     .then(async (authUser) => {
+      if (!authUser) throw new UserNotFoundError();
+      const hashedPassword = await authRepository.passwordForUser({ userId: authUser.id });
+      return { authUser, hashedPassword };
+    }).then(async ({ authUser, hashedPassword }) => {
       // Check password
-      const hashedPassword = authUser.password;
       const arePasswordTheSame = await verifyPasswords(
         data.password,
         hashedPassword,

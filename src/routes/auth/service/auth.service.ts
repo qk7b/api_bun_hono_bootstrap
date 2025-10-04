@@ -1,7 +1,6 @@
 type AuthUser = {
   id: string;
   email: string;
-  password: string;
   isValidated: boolean;
 };
 
@@ -61,6 +60,13 @@ interface AuthenticationService {
    * @returns The user or null if not found
    */
   getUserById({ id }: { id: string }): Promise<AuthUser | null>;
+
+  /**
+   * Get a user's password hash by id
+   * @param id - The user's id
+   * @returns The user's password hash or null if not found
+   */
+  getPasswordHashById({ userId }: { userId: string }): Promise<string | null>;
 
   /**
    * Create a validation code for a user

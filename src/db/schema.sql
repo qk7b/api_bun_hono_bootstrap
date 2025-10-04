@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     "isValidated" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "deletedAt" TIMESTAMP(3),
+    "deletedAt" TIMESTAMPTZ(6),
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "users_email_key" UNIQUE ("email")
@@ -34,9 +34,9 @@ CREATE TABLE IF NOT EXISTS "auth_providers" (
 -- User validation codes table
 CREATE TABLE IF NOT EXISTS "user_validation_code" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "userId" UUID NOT NULL
+    "userId" UUID NOT NULL,
     "expiresAt" TIMESTAMPTZ(6) NOT NULL,
-    "voided" BOOLEAN NOT NULL DEFAULT false,
+    "voided" BOOLEAN NOT NULL DEFAULT FALSE,
 
     CONSTRAINT "user_validation_code_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "user_validation_code_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS "files" (
     "contentType" TEXT NOT NULL,
     "bucket" TEXT NOT NULL,
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "deletedAt" TIMESTAMP(3),
+    "deletedAt" TIMESTAMPTZ(6),
 
     CONSTRAINT "files_pkey" PRIMARY KEY ("id")
 );
@@ -61,7 +61,7 @@ CREATE TABLE IF NOT EXISTS "user_files" (
     "fileId" UUID NOT NULL,
     "public" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "deletedAt" TIMESTAMP(3),
+    "deletedAt" TIMESTAMPTZ(6),
 
     CONSTRAINT "user_files_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "user_files_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE,
