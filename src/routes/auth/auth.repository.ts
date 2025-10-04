@@ -1,24 +1,24 @@
-import authService from './service';
-import { AuthUser } from './service/auth.service';
+import authService from "./service";
+import { AuthUser } from "./service/auth.service";
 
 class UserNotFoundError extends Error {
   constructor() {
-    super('User not found');
-    this.name = 'UserNotFoundError';
+    super("User not found");
+    this.name = "UserNotFoundError";
   }
 }
 
 class InvalidCodeError extends Error {
   constructor() {
-    super('Invalid code');
-    this.name = 'InvalidCodeError';
+    super("Invalid code");
+    this.name = "InvalidCodeError";
   }
 }
 
 class InvalidTokenError extends Error {
   constructor() {
-    super('Invalid token');
-    this.name = 'InvalidTokenError';
+    super("Invalid token");
+    this.name = "InvalidTokenError";
   }
 }
 
@@ -30,7 +30,7 @@ class AuthRepository {
     const codes = await authService.getCodesForUser({ userId: user.id });
     if (codes.length > 0) {
       const activeCodes = codes.filter(
-        (code) => !code.voided && code.expiresAt > new Date()
+        (code) => !code.voided && code.expiresAt > new Date(),
       );
       for (const code of activeCodes) {
         await authService.updateCode({ id: code.id, voided: true });

@@ -53,7 +53,8 @@ async function generateJWT(data: {
   id: string;
   email: string;
 }): Promise<string> {
-  const expiresInSeconds = toNumber(process.env.JWT_EXPIRES_IN_SECONDS) ?? 60 * 60;
+  const expiresInSeconds =
+    toNumber(process.env.JWT_EXPIRES_IN_SECONDS) ?? 60 * 60;
   return sign(
     {
       id: data.id,
@@ -85,7 +86,7 @@ authRoute.post("/", zValidator("json", createUserSchema), async (c) => {
       const validateCode = await authRepository.createCodeForUser({
         email: data.email,
       });
-      return { userId, validateCode, email: data.email }
+      return { userId, validateCode, email: data.email };
     })
     .then(async ({ userId, validateCode, email }) => {
       await emailService.sendMail({
@@ -204,9 +205,12 @@ authRoute.post("/login", zValidator("json", loginSchema), async (c) => {
     .getUser({ email: data.email })
     .then(async (authUser) => {
       if (!authUser) throw new UserNotFoundError();
-      const hashedPassword = await authRepository.passwordForUser({ userId: authUser.id });
+      const hashedPassword = await authRepository.passwordForUser({
+        userId: authUser.id,
+      });
       return { authUser, hashedPassword };
-    }).then(async ({ authUser, hashedPassword }) => {
+    })
+    .then(async ({ authUser, hashedPassword }) => {
       // Check password
       const arePasswordTheSame = await verifyPasswords(
         data.password,
