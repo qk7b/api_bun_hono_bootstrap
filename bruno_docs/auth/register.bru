@@ -1,0 +1,22 @@
+meta {
+  name: register
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/auth
+  body: json
+  auth: inherit
+}
+
+body:json {
+  {
+    "email": "innowarmth@gmail.com",
+    "password": "pipiCaCa123"
+  }
+}
+
+settings {
+  encodeUrl: true
+}

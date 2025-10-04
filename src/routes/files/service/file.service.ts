@@ -1,46 +1,50 @@
-enum FileServiceProviders {
-	s3ObjectStorage,
-}
-
+type UserFile = {
+  id: string;
+  name: string;
+  contentType: string;
+  bucket: string;
+  public: boolean;
+  userId: string;
+  createdAt: Date;
+};
 interface FileService {
-	// Save a file in the storage
-	// @param id - The id of the file
-	// @param location - The location of the file (bucket name, folder name)
-	// @param type - The type of the file (mime type)
-	// @param buffer - The buffer of the file
-	saveFile: ({
-		id,
-		location,
-		type,
-		buffer,
-	}: {
-		id: string;
-		location: string;
-		type: string;
-		buffer: Buffer;
-	}) => Promise<void>;
+  /**
+   * Get a file by id
+   * @param id - The file id
+   * @returns The file or null if not found
+   */
+  getFileById({ id }: { id: string }): Promise<UserFile | null>;
+  /**
+   * Create a new file
+   * @param file - The file to create
+   * @returns The file id
+   */
+  createFile({ file }: { file: UserFile }): Promise<string>;
+  /**
+   * Delete a file
+   * @param fileId - The file id to delete
+   */
+  deleteFile({ fileId }: { fileId: string }): Promise<void>;
 
-	// Delete a file from the storage
-	// @param id - The id of the file
-	// @param location - The location of the file (bucket name, folder name)
-	deleteFile: ({
-		id,
-		location,
-	}: {
-		id: string;
-		location: string;
-	}) => Promise<void>;
+  /**
+   * Link a file to a user
+   * @param fileId - The file id to link
+   * @param userId - The user id to link the file to
+   */
+  linkFileToUser({
+    fileId,
+    userId,
+  }: {
+    fileId: string;
+    userId: string;
+  }): Promise<void>;
 
-	// Read a file from the storage
-	// @param id - The id of the file
-	// @param location - The location of the file (bucket name, folder name)
-	readFile: ({
-		id,
-		location,
-	}: {
-		id: string;
-		location: string;
-	}) => Promise<Uint8Array | undefined>;
+  /**
+   * Get all files for a user
+   * @param userId - The user id to get the files for
+   * @returns The files for the user
+   */
+  getFilesForUser({ userId }: { userId: string }): Promise<UserFile[]>;
 }
 
-export { type FileService, FileServiceProviders };
+export { UserFile, type FileService };
