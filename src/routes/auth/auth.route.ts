@@ -1,6 +1,6 @@
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
-import { sign } from "hono/jwt";
+import { decode, jwt, sign, verify } from "hono/jwt";
 import { BrevoMailService } from "../../services/mail/impl/brevo_mail.service";
 import {
   AuthRepository,
@@ -11,6 +11,7 @@ import {
   createUserSchema,
   forgotPasswordSchema,
   loginSchema,
+  refreshSchema,
   resetPasswordSchema,
   validateEmailSchema,
 } from "./auth.schema";
@@ -239,6 +240,22 @@ authRoute.post("/login", zValidator("json", loginSchema), async (c) => {
       }
       return c.json({ error: "Invalid email or password" }, 401);
     });
+});
+
+// Refresh a JWT
+authRoute.post("/refresh", zValidator("json", refreshSchema), async (c) => {
+  const data = c.req.valid("json");
+  const jwt = data.token;
+  const isValid = verify(jwt, process.env.JWT_SECRET as string);
+  if (!isValid) {
+    return c.json({ error: "Invalid token" }, 401);
+  }
+  const { payload } = decode(jwt);
+  const token = await generateJWT({
+    id: payload.id as string,
+    email: payload.email as string,
+  });
+  return c.json({ token }, 200);
 });
 
 export default authRoute;

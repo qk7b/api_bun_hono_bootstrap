@@ -23,10 +23,15 @@ const validateEmailSchema = z.object({
   code: z.string(),
 });
 
+const refreshSchema = z.object({
+  token: z.string(),
+});
+
 export {
   createUserSchema,
   forgotPasswordSchema,
   loginSchema,
   resetPasswordSchema,
   validateEmailSchema,
+  refreshSchema,
 };
